@@ -99,21 +99,27 @@ module ActFluentLoggerRails
     def add_message(severity, message)
       @severity = severity if @severity < severity
 
-      message =
-        case message
-        when ::String
-          message
-        when ::Exception
-          "#{ message.message } (#{ message.class })\n" <<
-            (message.backtrace || []).join("\n")
-        else
-          message.inspect
+      if message.is_a? Hash
+        message.each do |key, value|
+          self[key] = value
         end
-
-      if message.encoding == Encoding::UTF_8
-        @messages << message
       else
-        @messages << message.dup.force_encoding(Encoding::UTF_8)
+        message =
+          case message
+          when ::String
+            message
+          when ::Exception
+            "#{ message.message } (#{ message.class })\n" <<
+              (message.backtrace || []).join("\n")
+          else
+            message.inspect
+          end
+
+        if message.encoding == Encoding::UTF_8
+          @messages << message
+        else
+          @messages << message.dup.force_encoding(Encoding::UTF_8)
+        end
       end
 
       flush if @flush_immediately
